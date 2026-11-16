@@ -1,0 +1,216 @@
+"""Cross-validated evaluation of sequential evidence-acquisition policies."""
+
+from __future__ import annotations
+
+import json
+import platform
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Dict, List, Optional
+
+import numpy as np
+import pandas as pd
+import sklearn
+from sklearn.metrics import (
+    accuracy_score,
+    average_precision_score,
+    balanced_accuracy_score,
+    brier_score_loss,
+    f1_score,
+    roc_auc_score,
+)
+from sklearn.model_selection import StratifiedGroupKFold
+
+from .config import DEFAULT_CONFIDENCE_THRESHOLD, DEFAULT_MAX_BUDGET, GROUP_COSTS
+from .models import fit_subset_models
+from .ollama_agent import OllamaDecisionAgent
+from .policies import build_adaptive_policy_table, run_single_policy
+
+
+def _safe_metric(function, y_true, y_score):
+    try:
+        return float(function(y_true, y_score))
+    except ValueError:
+        return float("nan")
+
+
+def _metrics_for_policy(frame: pd.DataFrame) -> Dict[str, object]:
+    y_true = frame["target"].to_numpy(dtype=int)
+    y_pred = frame["prediction"].to_numpy(dtype=int)
+    y_score = frame["probability_candidate"].to_numpy(dtype=float)
+    return {
+        "policy": str(frame["policy"].iloc[0]),
+        "n_samples": int(len(frame)),
+        "accuracy": float(accuracy_score(y_true, y_pred)),
+        "balanced_accuracy": float(balanced_accuracy_score(y_true, y_pred)),
+        "macro_f1": float(f1_score(y_true, y_pred, average="macro", zero_division=0)),
+        "roc_auc": _safe_metric(roc_auc_score, y_true, y_score),
+        "average_precision": _safe_metric(average_precision_score, y_true, y_score),
+        "brier_score": float(brier_score_loss(y_true, y_score)),
+        "mean_acquisition_cost": float(frame["acquisition_cost"].mean()),
+        "mean_groups_acquired": float(frame["groups_acquired"].mean()),
+        "mean_invalid_actions": float(frame["invalid_actions"].mean()),
+        "mean_fallback_actions": float(frame["fallback_actions"].mean()),
+        "mean_budget_guard_events": float(frame["budget_guard_events"].mean()),
+    }
+
+
+def run_experiment(
+    frame: pd.DataFrame,
+    output_dir: str,
+    folds: int = 5,
+    seed: int = 17,
+    max_samples: Optional[int] = None,
+    confidence_threshold: float = DEFAULT_CONFIDENCE_THRESHOLD,
+    max_budget: float = DEFAULT_MAX_BUDGET,
+    include_ollama: bool = False,
+    ollama_model: str = "qwen2.5:3b",
+    ollama_sample_limit: int = 50,
+    ollama_base_url: str = "http://localhost:11434",
+    input_sha256: Optional[str] = None,
+) -> Dict[str, str]:
+    """Run grouped cross-validation and write metrics, predictions, traces and metadata."""
+    if folds < 2:
+        raise ValueError("folds must be at least 2")
+    data = frame.copy()
+    if max_samples is not None and len(data) > max_samples:
+        data = data.sample(n=max_samples, random_state=seed).reset_index(drop=True)
+    if data["target"].nunique() != 2:
+        raise ValueError("Experiment data must contain both target classes.")
+
+    out = Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    splitter = StratifiedGroupKFold(n_splits=folds, shuffle=True, random_state=seed)
+    prediction_rows: List[Dict[str, object]] = []
+    trace_rows: List[Dict[str, object]] = []
+    ollama_agent = OllamaDecisionAgent(model=ollama_model, base_url=ollama_base_url) if include_ollama else None
+    ollama_remaining = max(0, int(ollama_sample_limit))
+    policy_names = ["signal_only", "fixed", "random", "adaptive", "full_information"]
+    if include_ollama:
+        policy_names.append("ollama")
+
+    for fold_number, (train_index, test_index) in enumerate(
+        splitter.split(data, data["target"], groups=data["kepid"]), start=1
+    ):
+        train_frame = data.iloc[train_index].reset_index(drop=True)
+        test_frame = data.iloc[test_index].reset_index(drop=True)
+        inner_splitter = StratifiedGroupKFold(
+            n_splits=4 if len(train_frame) >= 40 else 2,
+            shuffle=True,
+            random_state=seed + fold_number,
+        )
+        inner_train_index, calibration_index = next(
+            inner_splitter.split(train_frame, train_frame["target"], groups=train_frame["kepid"])
+        )
+        calibration_train = train_frame.iloc[inner_train_index].reset_index(drop=True)
+        calibration_frame = train_frame.iloc[calibration_index].reset_index(drop=True)
+        calibration_models = fit_subset_models(calibration_train, seed + fold_number)
+        policy_table = build_adaptive_policy_table(calibration_models, calibration_frame)
+        final_models = fit_subset_models(train_frame, seed + fold_number)
+
+        ollama_indices = set()
+        if include_ollama and ollama_remaining > 0:
+            count = min(ollama_remaining, len(test_frame))
+            ollama_indices = set(range(count))
+            ollama_remaining -= count
+
+        for row_index, row in test_frame.iterrows():
+            sample_key = str(row.get("kepoi_name", row_index))
+            active_policies = policy_names if (not include_ollama or row_index in ollama_indices) else policy_names[:-1]
+            for policy in active_policies:
+                result = run_single_policy(
+                    row=row,
+                    models=final_models,
+                    policy=policy,
+                    policy_table=policy_table,
+                    confidence_threshold=confidence_threshold,
+                    max_budget=max_budget,
+                    seed=seed + fold_number * 100003 + row_index,
+                    ollama_agent=ollama_agent if policy == "ollama" else None,
+                )
+                prediction = {
+                    "fold": fold_number,
+                    "sample_id": sample_key,
+                    "kepid": str(row["kepid"]),
+                    "target": int(row["target"]),
+                    "policy": policy,
+                    "prediction": int(result["prediction"]),
+                    "probability_candidate": float(result["probability_candidate"]),
+                    "acquisition_cost": float(result["acquisition_cost"]),
+                    "groups_acquired": int(result["groups_acquired"]),
+                    "acquired_groups": str(result["acquired_groups"]),
+                    "invalid_actions": int(result["invalid_actions"]),
+                    "fallback_actions": int(result["fallback_actions"]),
+                    "budget_guard_events": int(result["budget_guard_events"]),
+                }
+                prediction_rows.append(prediction)
+                trace_rows.append({
+                    "fold": fold_number,
+                    "sample_id": sample_key,
+                    "policy": policy,
+                    "trace": result["trace"],
+                })
+
+    predictions = pd.DataFrame(prediction_rows)
+    metrics_rows = []
+    for policy, group in predictions.groupby("policy", sort=False):
+        metrics_rows.append(_metrics_for_policy(group.reset_index(drop=True)))
+    metrics = pd.DataFrame(metrics_rows)
+    metrics.to_csv(out / "metrics.csv", index=False)
+    predictions.to_csv(out / "predictions.csv", index=False)
+    with (out / "acquisition_traces.jsonl").open("w", encoding="utf-8") as handle:
+        for item in trace_rows:
+            handle.write(json.dumps(item, sort_keys=True) + "\n")
+
+    metadata = {
+        "project": "ExoVet-AgentBench",
+        "version": "0.1.0",
+        "created_utc": datetime.now(timezone.utc).isoformat(),
+        "seed": seed,
+        "folds": folds,
+        "rows_used": int(len(data)),
+        "class_counts": {str(key): int(value) for key, value in data["target"].value_counts().sort_index().items()},
+        "host_groups": int(data["kepid"].nunique()),
+        "confidence_threshold": confidence_threshold,
+        "max_budget": max_budget,
+        "group_costs": GROUP_COSTS,
+        "group_split": "StratifiedGroupKFold grouped by kepid; host stars are not shared across outer folds",
+        "include_ollama": include_ollama,
+        "ollama_model": ollama_model if include_ollama else None,
+        "ollama_sample_limit_per_run": ollama_sample_limit if include_ollama else 0,
+        "python": platform.python_version(),
+        "pandas": pd.__version__,
+        "scikit_learn": sklearn.__version__,
+        "input_sha256": input_sha256,
+        "warning": "Predictions imitate DR25 pipeline dispositions; they are not physical exoplanet confirmations.",
+    }
+    metadata_path = out / "run_metadata.json"
+    metadata_path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+    summary_lines = [
+        "# ExoVet-AgentBench experiment summary",
+        "",
+        "This file is generated from the actual run. It contains no pre-filled or assumed performance results.",
+        "",
+        f"- Rows used: {len(data)}",
+        f"- Host-star groups: {data['kepid'].nunique()}",
+        f"- Outer folds: {folds}",
+        f"- Seed: {seed}",
+        f"- Confidence threshold: {confidence_threshold}",
+        f"- Maximum normalized budget: {max_budget}",
+        "",
+        "## Metrics",
+        "",
+        "```text",
+        metrics.to_string(index=False),
+        "```",
+        "",
+        "Interpretation note: the target is the DR25 catalogue disposition, not independently established planetary truth.",
+    ]
+    (out / "summary.md").write_text("\n".join(summary_lines), encoding="utf-8")
+    return {
+        "metrics": str(out / "metrics.csv"),
+        "predictions": str(out / "predictions.csv"),
+        "traces": str(out / "acquisition_traces.jsonl"),
+        "metadata": str(metadata_path),
+        "summary": str(out / "summary.md"),
+    }

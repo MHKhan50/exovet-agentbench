@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+data/raw/*.csv
+data/processed/*.csv
+.DS_Store
+
+# Detailed experiment outputs (retain locally; publish aggregate results)
+reports/run-*/predictions.csv
+reports/run-*/acquisition_traces.jsonl

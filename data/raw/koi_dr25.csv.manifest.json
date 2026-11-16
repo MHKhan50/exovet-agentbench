@@ -1,0 +1,27 @@
+{
+  "dataset": "Kepler Objects of Interest Q1-Q17 DR25 Supplemental",
+  "table": "q1_q17_dr25_sup_koi",
+  "source_url": "https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query=SELECT+kepid%2Ckepoi_name%2Ckoi_disposition%2Ckoi_model_snr%2Ckoi_num_transits%2Ckoi_max_mult_ev%2Ckoi_max_sngle_ev%2Ckoi_period%2Ckoi_duration%2Ckoi_depth%2Ckoi_impact%2Ckoi_ror%2Ckoi_srho%2Ckoi_model_chisq%2Ckoi_model_dof%2Ckoi_steff%2Ckoi_slogg%2Ckoi_smet%2Ckoi_srad%2Ckoi_smass%2Ckoi_sage+FROM+q1_q17_dr25_sup_koi+WHERE+koi_disposition+IN+%28%27CANDIDATE%27%2C%27FALSE+POSITIVE%27%29&format=csv",
+  "retrieved_utc": "2026-11-16T10:42:33.571640+00:00",
+  "row_count_raw": 6816,
+  "sha256": "9b3b614c5c730c85d99475fcaae1cea5459e6f35395dabca576824066a49de82",
+  "label_column": "koi_disposition",
+  "target_mapping": {
+    "FALSE POSITIVE": 0,
+    "CANDIDATE": 1
+  },
+  "excluded_leakage_columns": [
+    "koi_score",
+    "koi_fpflag_nt",
+    "koi_fpflag_ss",
+    "koi_fpflag_co",
+    "koi_fpflag_ec",
+    "koi_comment",
+    "koi_disp_prov",
+    "koi_pdisposition",
+    "koi_disposition"
+  ],
+  "query": "SELECT kepid,kepoi_name,koi_disposition,koi_model_snr,koi_num_transits,koi_max_mult_ev,koi_max_sngle_ev,koi_period,koi_duration,koi_depth,koi_impact,koi_ror,koi_srho,koi_model_chisq,koi_model_dof,koi_steff,koi_slogg,koi_smet,koi_srad,koi_smass,koi_sage FROM q1_q17_dr25_sup_koi WHERE koi_disposition IN ('CANDIDATE','FALSE POSITIVE')",
+  "archive_doi": "10.26133/NEA5",
+  "note": "Archive snapshot; record retrieval timestamp because the archive may update table content."
+}

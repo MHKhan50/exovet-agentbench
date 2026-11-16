@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below and cite the NASA Exoplanet Archive dataset separately."
+title: "ExoVet-AgentBench: Budgeted Agentic Evidence Acquisition for Kepler Exoplanet Candidate Vetting"
+authors:
+  - family-names: Hussain
+    given-names: Muzammal
+version: 0.1.0
+date-released: 2026-11-16
+repository-code: "https://github.com/MHKhan50/exovet-agentbench"
+license: MIT
+keywords:
+  - agentic AI
+  - astronomy
+  - exoplanet vetting
+  - active feature acquisition
+  - benchmark

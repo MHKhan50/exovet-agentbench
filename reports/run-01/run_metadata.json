@@ -1,0 +1,30 @@
+{
+  "project": "ExoVet-AgentBench",
+  "version": "0.1.0",
+  "created_utc": "2026-11-16T10:54:00.569541+00:00",
+  "seed": 17,
+  "folds": 5,
+  "rows_used": 6816,
+  "class_counts": {
+    "0": 4839,
+    "1": 1977
+  },
+  "host_groups": 6503,
+  "confidence_threshold": 0.85,
+  "max_budget": 5.4,
+  "group_costs": {
+    "signal_metrics": 1.0,
+    "transit_geometry": 1.2,
+    "fit_quality": 1.4,
+    "stellar_context": 1.8
+  },
+  "group_split": "StratifiedGroupKFold grouped by kepid; host stars are not shared across outer folds",
+  "include_ollama": false,
+  "ollama_model": null,
+  "ollama_sample_limit_per_run": 0,
+  "python": "3.9.6",
+  "pandas": "2.2.3",
+  "scikit_learn": "1.6.1",
+  "input_sha256": "233022b8ed14e7b1a73435e2a7e74ba3e0ac619d171b9207e326b7f2a1445b34",
+  "warning": "Predictions imitate DR25 pipeline dispositions; they are not physical exoplanet confirmations."
+}

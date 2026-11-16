@@ -1,0 +1,55 @@
+{
+  "source_raw_file": "data/raw/koi_dr25.csv",
+  "source_raw_sha256": "9b3b614c5c730c85d99475fcaae1cea5459e6f35395dabca576824066a49de82",
+  "prepared_file": "data/processed/koi_prepared.csv",
+  "prepared_sha256": "233022b8ed14e7b1a73435e2a7e74ba3e0ac619d171b9207e326b7f2a1445b34",
+  "rows": 6816,
+  "class_counts": {
+    "0": 4839,
+    "1": 1977
+  },
+  "target_mapping": {
+    "FALSE POSITIVE": 0,
+    "CANDIDATE": 1
+  },
+  "feature_groups": {
+    "signal_metrics": [
+      "koi_model_snr",
+      "koi_num_transits",
+      "koi_max_mult_ev",
+      "koi_max_sngle_ev"
+    ],
+    "transit_geometry": [
+      "koi_period",
+      "koi_duration",
+      "koi_depth",
+      "koi_impact",
+      "koi_ror",
+      "koi_srho"
+    ],
+    "fit_quality": [
+      "koi_model_chisq",
+      "koi_model_dof"
+    ],
+    "stellar_context": [
+      "koi_steff",
+      "koi_slogg",
+      "koi_smet",
+      "koi_srad",
+      "koi_smass",
+      "koi_sage"
+    ]
+  },
+  "excluded_columns": [
+    "koi_score",
+    "koi_fpflag_nt",
+    "koi_fpflag_ss",
+    "koi_fpflag_co",
+    "koi_fpflag_ec",
+    "koi_comment",
+    "koi_disp_prov",
+    "koi_pdisposition",
+    "koi_disposition"
+  ],
+  "note": "Target 1=CANDIDATE and 0=FALSE POSITIVE; target and excluded leakage fields are not model inputs."
+}
