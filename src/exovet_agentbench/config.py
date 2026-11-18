@@ -3,7 +3,11 @@
 from collections import OrderedDict
 
 TAP_ENDPOINT = "https://exoplanetarchive.ipac.caltech.edu/TAP/sync"
+# Labels come from the DR25 Supplemental table, which has disposition priority in the archive.
+# Its transit-fit and stellar columns are empty, so features come from the DR25 KOI table, which
+# has transit-fit priority. The two are joined on kepoi_name.
 TABLE_NAME = "q1_q17_dr25_sup_koi"
+FEATURE_TABLE_NAME = "q1_q17_dr25_koi"
 
 # Target is deliberately limited to the two DR25 Supplemental catalogue dispositions.
 LABEL_COLUMN = "koi_disposition"
@@ -72,7 +76,13 @@ RAW_COLUMNS = [
 ] + [column for columns in FEATURE_GROUPS.values() for column in columns]
 
 QUERY = (
-    "SELECT " + ",".join(RAW_COLUMNS) +
+    "SELECT kepid,kepoi_name," + LABEL_COLUMN +
     " FROM " + TABLE_NAME +
     " WHERE " + LABEL_COLUMN + " IN ('CANDIDATE','FALSE POSITIVE')"
 )
+
+FEATURE_COLUMNS = [column for columns in FEATURE_GROUPS.values() for column in columns]
+FEATURE_QUERY = "SELECT kepoi_name," + ",".join(FEATURE_COLUMNS) + " FROM " + FEATURE_TABLE_NAME
+
+# A feature that is missing for more than this share of rows stops preparation with an error.
+MAX_MISSING_SHARE = 0.5

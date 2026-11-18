@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import hashlib
+import io
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -15,8 +16,12 @@ import pandas as pd
 
 from .config import (
     EXCLUDED_LEAKAGE_COLUMNS,
+    FEATURE_COLUMNS,
     FEATURE_GROUPS,
+    FEATURE_QUERY,
+    FEATURE_TABLE_NAME,
     LABEL_COLUMN,
+    MAX_MISSING_SHARE,
     QUERY,
     RAW_COLUMNS,
     TAP_ENDPOINT,
@@ -33,53 +38,64 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def build_download_url() -> str:
-    return TAP_ENDPOINT + "?" + urlencode({"query": QUERY, "format": "csv"})
+def build_download_url(query: str = QUERY) -> str:
+    return TAP_ENDPOINT + "?" + urlencode({"query": query, "format": "csv"})
 
 
-def _validate_csv_text(text: str) -> int:
+def _validate_csv_text(text: str, required) -> int:
     reader = csv.DictReader(text.splitlines())
     if not reader.fieldnames:
         raise ValueError("NASA TAP response did not contain a CSV header.")
-    missing = sorted(set(RAW_COLUMNS) - set(reader.fieldnames))
+    missing = sorted(set(required) - set(reader.fieldnames))
     if missing:
         raise ValueError("NASA TAP response is missing required columns: " + ", ".join(missing))
     return sum(1 for _ in reader)
 
 
-def download_dataset(output_path: str, timeout: int = 90) -> Dict[str, object]:
-    """Download the fixed Kepler Q1-Q17 DR25 KOI table subset and write provenance."""
-    path = Path(output_path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    url = build_download_url()
+def _fetch_csv(query: str, required, timeout: int) -> str:
     request = Request(
-        url,
+        build_download_url(query),
         headers={
-            "User-Agent": "ExoVet-AgentBench/0.1.0 (reproducible research dataset client)",
+            "User-Agent": "ExoVet-AgentBench/0.2.0 (reproducible research dataset client)",
             "Accept": "text/csv",
         },
     )
     with urlopen(request, timeout=timeout) as response:
-        payload = response.read()
-    text = payload.decode("utf-8-sig")
+        text = response.read().decode("utf-8-sig")
     if text.lstrip().lower().startswith(("error", "<!doctype", "<html")):
         raise RuntimeError("NASA TAP returned an error page instead of CSV data: " + text[:300])
-    row_count = _validate_csv_text(text)
-    if row_count == 0:
+    if _validate_csv_text(text, required) == 0:
         raise RuntimeError("NASA TAP returned a valid CSV header but no rows.")
-    with path.open("w", encoding="utf-8", newline="") as handle:
-        handle.write(text)
+    return text
+
+
+def download_dataset(output_path: str, timeout: int = 90) -> Dict[str, object]:
+    """Download DR25 Supplemental labels and DR25 KOI features, join them on kepoi_name and write provenance."""
+    path = Path(output_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    labels_text = _fetch_csv(QUERY, ["kepid", "kepoi_name", LABEL_COLUMN], timeout)
+    features_text = _fetch_csv(FEATURE_QUERY, ["kepoi_name"] + FEATURE_COLUMNS, timeout)
+    labels = pd.read_csv(io.StringIO(labels_text), dtype={"kepid": "string", "kepoi_name": "string"})
+    features = pd.read_csv(io.StringIO(features_text), dtype={"kepoi_name": "string"})
+    features = features.drop_duplicates(subset=["kepoi_name"], keep="first")
+    joined = labels.merge(features, on="kepoi_name", how="inner", validate="many_to_one")
+    joined = joined[RAW_COLUMNS]
+    joined.to_csv(path, index=False)
     manifest: Dict[str, object] = {
-        "dataset": "Kepler Objects of Interest Q1-Q17 DR25 Supplemental",
-        "table": TABLE_NAME,
-        "source_url": url,
+        "dataset": "Kepler Q1-Q17 DR25 Supplemental dispositions joined to Q1-Q17 DR25 KOI transit fits",
+        "label_table": TABLE_NAME,
+        "feature_table": FEATURE_TABLE_NAME,
+        "label_url": build_download_url(QUERY),
+        "feature_url": build_download_url(FEATURE_QUERY),
         "retrieved_utc": datetime.now(timezone.utc).isoformat(),
-        "row_count_raw": row_count,
+        "label_rows": int(len(labels)),
+        "feature_rows": int(len(features)),
+        "row_count_raw": int(len(joined)),
+        "label_rows_without_dr25_fit": int(len(labels) - len(joined)),
         "sha256": sha256_file(path),
         "label_column": LABEL_COLUMN,
         "target_mapping": TARGET_MAPPING,
         "excluded_leakage_columns": EXCLUDED_LEAKAGE_COLUMNS,
-        "query": QUERY,
         "archive_doi": "10.26133/NEA5",
         "note": "Archive snapshot; record retrieval timestamp because the archive may update table content.",
     }
@@ -109,6 +125,15 @@ def prepare_dataset(raw_path: str, output_path: str) -> Dict[str, object]:
     feature_columns = [column for columns in FEATURE_GROUPS.values() for column in columns]
     for column in feature_columns:
         frame[column] = pd.to_numeric(frame[column], errors="coerce")
+
+    missing_share = frame[feature_columns].isna().mean()
+    empty = sorted(missing_share[missing_share > MAX_MISSING_SHARE].index)
+    if empty:
+        raise ValueError(
+            "These features are missing for more than {:.0%} of rows, so the download is unusable: {}".format(
+                MAX_MISSING_SHARE, ", ".join(empty)
+            )
+        )
 
     keep_columns = ["kepid", "kepoi_name", "target"] + feature_columns
     prepared = frame[keep_columns].reset_index(drop=True)
