@@ -19,13 +19,11 @@ The raw download is a CSV subset of the NASA Exoplanet Archive Kepler Q1-Q17 DR2
 | `koi_impact` | Impact parameter | stellar radii, dimensionless | `transit_geometry` |
 | `koi_ror` | Planet-to-star radius ratio | dimensionless | `transit_geometry` |
 | `koi_srho` | Fitted stellar density | g/cm^3 | `transit_geometry` |
-| `koi_model_chisq` | Reduced chi-square of transit model fit | dimensionless | `fit_quality` |
-| `koi_model_dof` | Model degrees of freedom | count | `fit_quality` |
+| `koi_bin_oedp_sig` | Significance of the odd-even transit depth difference (DR25 KOI table) | sigma | `fit_quality` |
 | `koi_steff` | Stellar effective temperature | K | `stellar_context` |
 | `koi_slogg` | Stellar surface gravity | log10(cm s^-2) | `stellar_context` |
 | `koi_smet` | Stellar metallicity | dex | `stellar_context` |
 | `koi_srad` | Stellar radius | solar radii | `stellar_context` |
 | `koi_smass` | Stellar mass | solar masses | `stellar_context` |
-| `koi_sage` | Stellar age | Gyr | `stellar_context` |
 
 Missing numerical values are retained and imputed inside each training fold. The downloader intentionally excludes `koi_score`, the original pipeline disposition `koi_pdisposition`, explicit `koi_fpflag_*` false-positive flags, disposition comments and provenance to reduce direct target leakage.

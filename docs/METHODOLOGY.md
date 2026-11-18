@@ -26,7 +26,7 @@ The environment exposes four evidence groups in sequence. Costs are benchmark as
 |---|---|---:|
 | `signal_metrics` | Transit SNR, number of transits, maximum multiple-event and single-event statistics | 1.0 |
 | `transit_geometry` | Period, duration, depth, impact parameter, radius ratio, fitted stellar density | 1.2 |
-| `fit_quality` | Reduced chi-square and model degrees of freedom | 1.4 |
+| `fit_quality` | Odd-even transit depth significance (the DR25 KOI table leaves reduced chi-square and degrees of freedom empty) | 1.4 |
 | `stellar_context` | Effective temperature, surface gravity, metallicity, stellar radius, mass and age | 1.8 |
 
 The agent initially receives `signal_metrics`. It may request one remaining group at a time, or stop. The environment enforces the cost budget and does not expose unrequested feature values to the optional Ollama agent.

@@ -4,7 +4,7 @@
   "feature_table": "q1_q17_dr25_koi",
   "label_url": "https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query=SELECT+kepid%2Ckepoi_name%2Ckoi_disposition+FROM+q1_q17_dr25_sup_koi+WHERE+koi_disposition+IN+%28%27CANDIDATE%27%2C%27FALSE+POSITIVE%27%29&format=csv",
   "feature_url": "https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query=SELECT+kepoi_name%2Ckoi_model_snr%2Ckoi_num_transits%2Ckoi_max_mult_ev%2Ckoi_max_sngle_ev%2Ckoi_period%2Ckoi_duration%2Ckoi_depth%2Ckoi_impact%2Ckoi_ror%2Ckoi_srho%2Ckoi_model_chisq%2Ckoi_model_dof%2Ckoi_steff%2Ckoi_slogg%2Ckoi_smet%2Ckoi_srad%2Ckoi_smass%2Ckoi_sage+FROM+q1_q17_dr25_koi&format=csv",
-  "retrieved_utc": "2026-11-18T10:12:35.387401+00:00",
+  "retrieved_utc": "2026-11-18T10:14:45.094080+00:00",
   "label_rows": 6816,
   "feature_rows": 8054,
   "row_count_raw": 5323,

@@ -36,9 +36,10 @@ FEATURE_GROUPS = OrderedDict([
         "koi_ror",
         "koi_srho",
     ]),
+    # koi_model_chisq and koi_model_dof are empty in the DR25 KOI table, so the fit-quality
+    # group uses the DR25 odd-even depth significance instead.
     ("fit_quality", [
-        "koi_model_chisq",
-        "koi_model_dof",
+        "koi_bin_oedp_sig",
     ]),
     ("stellar_context", [
         "koi_steff",
@@ -46,7 +47,6 @@ FEATURE_GROUPS = OrderedDict([
         "koi_smet",
         "koi_srad",
         "koi_smass",
-        "koi_sage",
     ]),
 ])
 
