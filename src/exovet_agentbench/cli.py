@@ -34,6 +34,8 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--ollama-model", default="qwen2.5:3b")
     run_parser.add_argument("--ollama-sample-limit", type=int, default=50)
     run_parser.add_argument("--ollama-base-url", default="http://localhost:11434")
+    run_parser.add_argument("--ollama-prompt", choices=["neutral", "cost_aware"], default="neutral",
+                            help="neutral: v0.1 prompt; cost_aware: also states that evidence should be bought only when worth its cost.")
     return parser
 
 
@@ -59,6 +61,7 @@ def main() -> None:
             ollama_model=args.ollama_model,
             ollama_sample_limit=args.ollama_sample_limit,
             ollama_base_url=args.ollama_base_url,
+            ollama_prompt=args.ollama_prompt,
             input_sha256=sha256_file(Path(args.input)),
         )
         print(json.dumps(outputs, indent=2))

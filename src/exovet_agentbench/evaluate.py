@@ -67,6 +67,7 @@ def run_experiment(
     ollama_model: str = "qwen2.5:3b",
     ollama_sample_limit: int = 50,
     ollama_base_url: str = "http://localhost:11434",
+    ollama_prompt: str = "neutral",
     input_sha256: Optional[str] = None,
 ) -> Dict[str, str]:
     """Run grouped cross-validation and write metrics, predictions, traces and metadata."""
@@ -83,7 +84,7 @@ def run_experiment(
     splitter = StratifiedGroupKFold(n_splits=folds, shuffle=True, random_state=seed)
     prediction_rows: List[Dict[str, object]] = []
     trace_rows: List[Dict[str, object]] = []
-    ollama_agent = OllamaDecisionAgent(model=ollama_model, base_url=ollama_base_url) if include_ollama else None
+    ollama_agent = OllamaDecisionAgent(model=ollama_model, base_url=ollama_base_url, prompt_style=ollama_prompt) if include_ollama else None
     ollama_remaining = max(0, int(ollama_sample_limit))
     policy_names = ["signal_only", "fixed", "random", "adaptive", "full_information"]
     if include_ollama:
@@ -179,6 +180,7 @@ def run_experiment(
         "include_ollama": include_ollama,
         "ollama_model": ollama_model if include_ollama else None,
         "ollama_sample_limit_per_run": ollama_sample_limit if include_ollama else 0,
+        "ollama_prompt": ollama_prompt if include_ollama else None,
         "python": platform.python_version(),
         "pandas": pd.__version__,
         "scikit_learn": sklearn.__version__,

@@ -1,12 +1,12 @@
 {
   "source_raw_file": "data/raw/koi_dr25.csv",
-  "source_raw_sha256": "9b3b614c5c730c85d99475fcaae1cea5459e6f35395dabca576824066a49de82",
+  "source_raw_sha256": "7dce35987a43898e02942bacaffa0d1b0b85916fbba918aa894f02eea4c2c3d9",
   "prepared_file": "data/processed/koi_prepared.csv",
-  "prepared_sha256": "233022b8ed14e7b1a73435e2a7e74ba3e0ac619d171b9207e326b7f2a1445b34",
-  "rows": 6816,
+  "prepared_sha256": "ab7c9fa40b462abe6053bf1b689f9953fec73be6b27dcb692eb5f834d71f0ed5",
+  "rows": 5323,
   "class_counts": {
-    "0": 4839,
-    "1": 1977
+    "0": 3946,
+    "1": 1377
   },
   "target_mapping": {
     "FALSE POSITIVE": 0,
@@ -28,16 +28,14 @@
       "koi_srho"
     ],
     "fit_quality": [
-      "koi_model_chisq",
-      "koi_model_dof"
+      "koi_bin_oedp_sig"
     ],
     "stellar_context": [
       "koi_steff",
       "koi_slogg",
       "koi_smet",
       "koi_srad",
-      "koi_smass",
-      "koi_sage"
+      "koi_smass"
     ]
   },
   "excluded_columns": [

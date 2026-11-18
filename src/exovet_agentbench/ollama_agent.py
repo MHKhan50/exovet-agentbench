@@ -10,8 +10,24 @@ from urllib.request import Request, urlopen
 from .config import FEATURE_GROUPS, GROUP_COSTS
 
 
+PROMPT_STYLES = ("neutral", "cost_aware")
+
+# Added to the prompt in the cost-aware condition. The neutral prompt (v0.1) states the actions
+# and the budget but not that evidence should be bought only when it is worth its cost.
+COST_AWARE_OBJECTIVE = [
+    "Objective: reach the correct label at the lowest total evidence cost.",
+    "Every requested group adds its cost; stopping early is not penalised.",
+    "current_probability_of_DR25_candidate_label comes from a calibrated classifier on the groups already acquired.",
+    "Stop when that probability already makes the label clear; request a group only if it could change the label.",
+]
+
+
 class OllamaDecisionAgent:
-    def __init__(self, model: str = "qwen2.5:3b", base_url: str = "http://localhost:11434", timeout: int = 45):
+    def __init__(self, model: str = "qwen2.5:3b", base_url: str = "http://localhost:11434", timeout: int = 45,
+                 prompt_style: str = "neutral"):
+        if prompt_style not in PROMPT_STYLES:
+            raise ValueError("prompt_style must be one of " + ", ".join(PROMPT_STYLES))
+        self.prompt_style = prompt_style
         self.model = model
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
@@ -42,14 +58,14 @@ class OllamaDecisionAgent:
             raise ValueError("Requested evidence group is not available.")
         return group
 
-    def choose_next_group(
+    def build_prompt(
         self,
         available_groups,
         acquired_groups,
         remaining_budget,
         current_probability,
         visible_features: Dict[str, Optional[float]],
-    ) -> Optional[str]:
+    ) -> Dict[str, object]:
         prompt_payload = {
             "task": "Choose the next evidence group for a Kepler candidate-vetting benchmark.",
             "allowed_actions": ["request", "stop"],
@@ -68,6 +84,20 @@ class OllamaDecisionAgent:
                 'Return JSON only: {"action":"request","group":"..."} or {"action":"stop"}.',
             ],
         }
+        if self.prompt_style == "cost_aware":
+            prompt_payload["rules"] = COST_AWARE_OBJECTIVE + prompt_payload["rules"]
+        return prompt_payload
+
+    def choose_next_group(
+        self,
+        available_groups,
+        acquired_groups,
+        remaining_budget,
+        current_probability,
+        visible_features: Dict[str, Optional[float]],
+    ) -> Optional[str]:
+        prompt_payload = self.build_prompt(available_groups, acquired_groups, remaining_budget,
+                                           current_probability, visible_features)
         request_body = json.dumps({
             "model": self.model,
             "prompt": json.dumps(prompt_payload),
