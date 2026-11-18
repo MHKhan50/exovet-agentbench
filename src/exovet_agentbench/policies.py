@@ -96,10 +96,20 @@ def run_single_policy(
     max_budget: float = DEFAULT_MAX_BUDGET,
     seed: int = 17,
     ollama_agent: Optional[object] = None,
+    calibration_frame: Optional[pd.DataFrame] = None,
 ) -> Dict[str, object]:
     """Run one policy on one candidate without exposing unrequested feature groups."""
     if policy not in {"signal_only", "fixed", "random", "adaptive", "full_information", "ollama"}:
         raise ValueError("Unknown policy: " + policy)
+
+    if not math.isfinite(float(max_budget)):
+        raise ValueError("max_budget must be a finite number.")
+
+    if float(max_budget) < float(GROUP_COSTS[INITIAL_GROUP]):
+        raise ValueError(
+            "max_budget must be at least the initial evidence group cost."
+        )
+
     acquired = {INITIAL_GROUP}
     spent = float(GROUP_COSTS[INITIAL_GROUP])
     trace: List[Dict[str, object]] = [{
@@ -143,10 +153,20 @@ def run_single_policy(
             elif policy == "random":
                 next_group = rng.choice(available)
             elif policy == "adaptive":
-                key = (_ordered_subset(acquired), confidence_bucket(current_probability))
-                next_group = policy_table.get(key)
-                if next_group not in available:
-                    next_group = min(available, key=lambda group: GROUP_COSTS[group])
+                if calibration_frame is not None:
+                    from .evi import select_candidate_specific_group
+
+                    next_group = select_candidate_specific_group(
+                        row=row,
+                        acquired=acquired,
+                        models=models,
+                        calibration_frame=calibration_frame,
+                    )
+                else:
+                    key = (_ordered_subset(acquired), confidence_bucket(current_probability))
+                    next_group = policy_table.get(key)
+                    if next_group not in available:
+                        next_group = min(available, key=lambda group: GROUP_COSTS[group])
             else:  # optional local Ollama agent
                 try:
                     next_group = ollama_agent.choose_next_group(

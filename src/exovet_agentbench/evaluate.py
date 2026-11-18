@@ -127,6 +127,7 @@ def run_experiment(
                     max_budget=max_budget,
                     seed=seed + fold_number * 100003 + row_index,
                     ollama_agent=ollama_agent if policy == "ollama" else None,
+                    calibration_frame=calibration_frame if policy == "adaptive" else None,
                 )
                 prediction = {
                     "fold": fold_number,
