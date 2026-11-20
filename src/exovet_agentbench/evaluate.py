@@ -21,6 +21,7 @@ from sklearn.metrics import (
 )
 from sklearn.model_selection import StratifiedGroupKFold
 
+from . import __version__
 from .config import DEFAULT_CONFIDENCE_THRESHOLD, DEFAULT_MAX_BUDGET, GROUP_COSTS
 from .models import fit_subset_models
 from .ollama_agent import OllamaDecisionAgent
@@ -166,7 +167,7 @@ def run_experiment(
 
     metadata = {
         "project": "ExoVet-AgentBench",
-        "version": "0.1.0",
+        "version": __version__,
         "created_utc": datetime.now(timezone.utc).isoformat(),
         "seed": seed,
         "folds": folds,

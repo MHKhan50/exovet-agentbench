@@ -1,7 +1,7 @@
 # ExoVet-AgentBench
 
 **Budgeted Agentic Evidence Acquisition for Kepler Exoplanet Candidate Vetting**
-Version: `0.1.0` · Python `3.9+` · Lightweight CPU workflow
+Version: `0.2.0` · Python `3.9+` · Lightweight CPU workflow
 
 ## Project overview
 
@@ -22,6 +22,30 @@ Recent active-feature-acquisition literature frames sequential feature requests 
 3. Can a small local LLM choose valid evidence requests under explicit tool and budget constraints?
 
 See `docs/EXPERIMENT_PROTOCOL.md` before running experiments.
+
+## Results (v0.2.0)
+
+**Paper:** *Told the Price, Buying Everything: Small LLM Agents in Cost-Aware Evidence Acquisition for Kepler Candidate Vetting* — [`paper/main.pdf`](paper/main.pdf).
+
+5,323 KOIs (1,377 candidates), five folds grouped by host star; 95% intervals from 1,000 host-star bootstrap resamples.
+
+| Budget | Policy | Mean cost | ROC AUC | Balanced accuracy |
+|---|---|---|---|---|
+| – | Signal only | 1.00 | 0.805 [0.794, 0.817] | 0.744 |
+| – | Full information | 5.40 | 0.867 [0.857, 0.877] | 0.799 |
+| 5.4 | Fixed | 3.86 | 0.863 | 0.799 |
+| 5.4 | Random | 4.03 | 0.864 | 0.798 |
+| 5.4 | Adaptive | 3.83 | 0.863 | 0.799 |
+| 4.0 | Adaptive | 2.97 | 0.861 | 0.795 |
+
+- Stopping at 85% confidence saves 29% of the cost with the same balanced accuracy (difference −0.001 [−0.002, 0.000]).
+- The information-gain order equals the fixed order: it chose transit geometry second for 3,968 of 3,991 KOIs.
+- **LLM agents** (`qwen2.5:3b`, `llama3.1:8b`; 300 fold-1 KOIs): with a neutral or a cost-aware prompt they never
+  stopped early and bought every affordable group in every episode, including 47 KOIs already clear after the first
+  group. At budget 4.0 `qwen2.5:3b` requested an unaffordable group in all 300 episodes.
+
+Runs: `reports/run-02` (rule policies), `reports/agent-*-neutral-b5.4`, `reports/agent-*-costaware-b5.4` and
+`reports/agent-*-costaware-b4.0` (per-KOI predictions and acquisition traces).
 
 ## Repository structure
 

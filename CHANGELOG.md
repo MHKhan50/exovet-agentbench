@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0 — 2026-11-20
+
+- DR25 transit fits joined to the Supplemental dispositions; empty DR25 columns dropped; fit-quality group uses the
+  odd-even depth significance; empty features rejected.
+- Cost-aware prompt condition for the Ollama agent (`--ollama-prompt cost_aware`).
+- Results: rule policies on 5,323 KOIs and LLM agents (two models, two prompts, budgets 5.4 and 4.0) on 300 KOIs in
+  `reports/`; paper in `paper/`.
+
 ## 0.1.0 — 2026-11-16
 
 - Initial release of a grouped, cost-aware evidence-acquisition benchmark for Kepler DR25 KOI dispositions.
