@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1 — 2026-11-20
+
+- Paper: related work (Robovetter, Autovetter, Astronet, tool overuse); cost comparison on the same 300 KOIs
+  (5.40 against 4.33, 25% more); balanced accuracy of the agents at budget 4.0 (0.785).
+
 ## 0.2.0 — 2026-11-20
 
 - DR25 transit fits joined to the Supplemental dispositions; empty DR25 columns dropped; fit-quality group uses the

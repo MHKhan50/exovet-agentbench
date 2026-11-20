@@ -63,6 +63,22 @@ The target is the disposition in the Kepler DR25 Supplemental table~\cite{thomps
 combines automated and human vetting; predicting it is a benchmark of agreement with that catalogue, not a
 confirmation of planets.
 
+\section{Related work}
+
+\paragraph{Kepler candidate vetting.} The DR24 and DR25 catalogues were produced by the Robovetter, an expert system
+of hand-tuned tests on the light curve and pipeline diagnostics~\cite{coughlin2016dr24,thompson2018dr25}. The
+Autovetter classified the same threshold-crossing events with a random forest on pipeline attributes
+\cite{mccauliff2015autovetter}, and Astronet trained a convolutional network on the folded light curves
+\cite{shallue2018astronet}. All three see every feature for every signal; we ask instead which features are worth
+paying for, and use a deliberately simple classifier so that the acquisition decision is the only variable.
+
+\paragraph{Cost-aware acquisition and tool use.} Active feature acquisition buys features per instance to trade
+cost against accuracy~\cite{saar2009afa,aronsson2026afa}. For LLM agents the analogous failure is tool overuse:
+calling tools when the answer is already available, which SMART~\cite{qian2025smart} reduces by training agents to
+recognise when a tool is needed. Our agents do not choose between a tool and their own knowledge but between more
+evidence and stopping, and we test whether a prompt alone, with the costs and the classifier's confidence in view, is
+enough.
+
 \section{Method}
 
 \paragraph{Data.} We query the NASA Exoplanet Archive table \code{q1\_q17\_dr25\_sup\_koi} and join the DR25 transit
@@ -161,7 +177,9 @@ context, the most expensive group, second in every episode.
 \paragraph{A tighter budget is spent, not respected.} At budget 4.0 with the cost-aware prompt, both models spent
 exactly 4.0 in every episode (signal metrics, transit geometry and stellar context). \code{qwen2.5:3b} then asked for
 a group it could not pay for in all 300 episodes, and the environment's budget guard ended the episode; it never
-stopped by itself.
+stopped by itself. Spending the whole budget did not buy accuracy: by taking stellar context instead of fit quality,
+the agents reached a balanced accuracy of 0.785 on these KOIs, against 0.798 with full information and 0.795 for the
+fixed rule, which spent 3.05.
 
 \section{Discussion}
 
@@ -172,8 +190,8 @@ things to do; another is that a probability of 0.9 does not register as ``enough
 property of the agent, not of the task: a one-line threshold rule in the environment recovers almost all of the saving.
 
 \paragraph{Where to put cost control.} In this benchmark the acquisition decision was the only thing the LLM
-controlled, and leaving it to the model cost 41\% more than the threshold rule on the same KOIs (5.40 against
-3.83 on all data, 4.33 on the 300), without any gain in accuracy. Agents that call paid or slow tools should enforce
+controlled, and leaving it to the model cost 25\% more than the threshold rule on the same 300 KOIs (5.40 against
+4.33), without any gain in accuracy. Agents that call paid or slow tools should enforce
 budgets and stopping rules in the environment, and report cost next to accuracy so that this behaviour is visible.
 
 \paragraph{Why the order did not matter.} With only three optional groups and transit geometry the most informative
