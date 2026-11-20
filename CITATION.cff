@@ -7,6 +7,7 @@ authors:
     affiliation: "Independent researcher, Glasgow, United Kingdom"
     orcid: "https://orcid.org/0009-0001-2570-5686"
 version: 0.2.1
+doi: 10.5281/zenodo.24407523
 date-released: 2026-11-20
 repository-code: "https://github.com/MHKhan50/exovet-agentbench"
 license: MIT

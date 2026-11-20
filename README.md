@@ -1,7 +1,7 @@
 # ExoVet-AgentBench
 
 **Budgeted Agentic Evidence Acquisition for Kepler Exoplanet Candidate Vetting**
-Version: `0.2.1` · Python `3.9+` · Lightweight CPU workflow
+Version: `0.2.1` · [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24407523.svg)](https://doi.org/10.5281/zenodo.24407523) · Python `3.9+` · Lightweight CPU workflow
 
 ## Project overview
 
