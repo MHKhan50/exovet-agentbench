@@ -180,6 +180,17 @@ The tests use small temporary in-memory fixtures to verify software behaviour. T
 
 ## Citation
 
+```bibtex
+@misc{hussain2026exovet,
+  author    = {Hussain, Muzammal},
+  title     = {{Told the Price, Buying Everything: Small LLM Agents in Cost-Aware Evidence Acquisition for Kepler Candidate Vetting}},
+  year      = {2026},
+  publisher = {Zenodo},
+  doi       = {10.5281/zenodo.24407523},
+  url       = {https://doi.org/10.5281/zenodo.24407523}
+}
+```
+
 See `CITATION.cff`. Cite the NASA archive dataset with DOI [10.26133/NEA5](https://doi.org/10.26133/NEA5) and the DR25 catalogue paper with DOI [10.3847/1538-4365/aab4f9](https://doi.org/10.3847/1538-4365/aab4f9). Record the dataset retrieval timestamp and checksum from the generated manifest.
 
 ## License
